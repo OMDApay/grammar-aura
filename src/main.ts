@@ -99,7 +99,7 @@ function renderTopbar(): string {
     <button class="wordmark" data-action="home" aria-label="Grammar Aura home"><span class="wordmark-mark">✦</span><span>Grammar <b>Aura</b></span></button>
     <div class="top-actions">
       <label class="language-picker"><span class="sr-only">Language</span><select data-role="language" aria-label="Language">${optionMarkup}</select></label>
-      <button class="icon-button" data-action="toggle-mute" aria-label="${escapeHtml(state.muted ? tr('soundOff') : tr('soundOn'))}">${state.muted ? '◌' : '◉'}</button>
+      <button class="icon-button music-toggle ${state.muted ? 'muted' : 'playing'}" data-action="toggle-mute" aria-label="${escapeHtml(state.muted ? tr('soundOff') : tr('soundOn'))}" title="${escapeHtml(state.muted ? tr('soundOff') : tr('soundOn'))}"><span class="music-note" aria-hidden="true">♫</span><span class="music-waves" aria-hidden="true"><i></i><i></i><i></i></span></button>
     </div>
   </header>`
 }
