@@ -248,7 +248,7 @@ function bindEvents(): void {
 }
 
 function handleAction(action: string): void {
-  if (action === 'toggle-mute') { state.muted = !state.muted; save(); audio.setMuted(state.muted); render(); return }
+  if (action === 'toggle-mute') { audio.unlock(); state.muted = !state.muted; save(); audio.setMuted(state.muted); render(); return }
   if (action === 'home') { mode = 'home'; feedback = null; render(); return }
   if (action === 'academy') { document.querySelector('.mentor-section')?.scrollIntoView({ behavior: 'smooth' }); return }
   if (action === 'hint') { const item = currentLesson(); if (item && !feedback) { state.hints += 1; save(); showToast(`${mentorName(state.mentor)}: ${item.rule}`, 'success'); audio.playHint() } return }
@@ -362,7 +362,7 @@ function createAudio(): { unlock: () => void; play: (correct: boolean, perfect: 
   const unlock = (): void => {
     if (context) { if (context.state === 'suspended') void context.resume(); return }
     context = new AudioContext(); master = context.createGain(); master.gain.value = state.muted ? 0 : 0.14; master.connect(context.destination)
-    music = new Audio('/audio/aura-academy.mp3'); music.loop = true; music.volume = 0.22; void music.play().catch(() => undefined)
+    music = new Audio('./audio/aura-academy.mp3'); music.loop = true; music.preload = 'auto'; music.volume = 0.22; void music.play().catch(() => undefined)
   }
   const play = (correct: boolean, perfect: boolean): void => {
     if (state.muted) return
@@ -373,7 +373,7 @@ function createAudio(): { unlock: () => void; play: (correct: boolean, perfect: 
     oscillator.connect(gain); gain.connect(master); oscillator.start(); oscillator.stop(context.currentTime + 0.3)
   }
   const playHint = (): void => { if (state.muted || !context || !master) return; const now = context.currentTime; [392, 523, 659].forEach((frequency, index) => { const oscillator = context!.createOscillator(); const gain = context!.createGain(); oscillator.type = 'sine'; oscillator.frequency.value = frequency; gain.gain.setValueAtTime(0.0001, now + index * 0.07); gain.gain.exponentialRampToValueAtTime(0.06, now + index * 0.07 + 0.02); gain.gain.exponentialRampToValueAtTime(0.0001, now + index * 0.07 + 0.25); oscillator.connect(gain); gain.connect(master!); oscillator.start(now + index * 0.07); oscillator.stop(now + index * 0.07 + 0.28) }) }
-  const setMuted = (muted: boolean): void => { if (master) master.gain.value = muted ? 0 : 0.14; if (music) music.volume = muted ? 0 : 0.22 }
+  const setMuted = (muted: boolean): void => { if (master) master.gain.value = muted ? 0 : 0.14; if (music) { music.volume = muted ? 0 : 0.22; if (!muted) void music.play().catch(() => undefined) } }
   return { unlock, play, playHint, setMuted }
 }
 
