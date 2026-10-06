@@ -4,7 +4,7 @@ import { lessons, lessonsByLevel, levels, type LevelId, type Lesson } from './da
 import { copy, languageOptions, type Locale } from './data/i18n'
 
 type Mode = 'home' | 'lesson'
-type Feedback = { correct: boolean; submitted: string }
+type Feedback = { correct: boolean; submitted: string; bonus?: number }
 
 type SaveState = {
   locale: Locale
@@ -32,6 +32,7 @@ let selectedAnswer = ''
 let orderSelection: number[] = []
 let feedback: Feedback | null = null
 let toastTimer = 0
+let hintUsedForLesson = false
 
 createScene(canvas)
 const audio = createAudio()
@@ -184,8 +185,8 @@ function renderLesson(): string {
     <div class="lesson-progress"><span style="width:${Math.max(8, doneCount / levelLessons.length * 100)}%;background:${level.color}"></span></div>
     <section class="lesson-header"><div class="level-pill" style="--level-color:${level.color}">${item.level}</div><div><p class="eyebrow">${escapeHtml(item.focus)}</p><h1>${escapeHtml(item.title)}</h1><p class="lesson-summary">${escapeHtml(item.summary)}</p></div></section>
     <div class="lesson-layout">
-      <article class="rule-card"><div class="card-label">${tr('guide')}</div><div class="mentor-banner ${state.mentor}"><span class="mentor-avatar">${mentorGlyph(state.mentor)}</span><div><b>${mentorName(state.mentor)}</b><small>${mentorRole(state.mentor)}</small></div><button type="button" class="hint-button" data-action="hint">? ${tr('hint')}</button></div><h2>${escapeHtml(item.rule)}</h2><div class="example-box"><span>Example</span><strong>${escapeHtml(item.example)}</strong></div><div class="mentor-line"><span class="mini-avatar">✦</span><span>${escapeHtml(characterMessage(item))}</span></div></article>
-      <form class="challenge-card" data-form="challenge"><div class="challenge-top"><span class="card-label">${tr('challenge')}</span><span class="challenge-type">${item.kind === 'choice' ? '01' : item.kind === 'fill' ? '02' : item.kind === 'order' ? '03' : '04'}</span></div><h2>${escapeHtml(challengeHeading(item))}</h2><p class="challenge-prompt">${escapeHtml(item.prompt)}</p>${renderChallengeInput(item)}${feedback ? renderFeedback(item) : `<button class="primary-button challenge-submit" type="submit">${tr('check')} <span>↗</span></button>`}</form>
+      <article class="rule-card"><div class="card-label">${tr('guide')}</div><div class="mentor-banner ${state.mentor}"><span class="mentor-avatar">${mentorGlyph(state.mentor)}</span><div><b>${mentorName(state.mentor)}</b><small>${mentorRole(state.mentor)}</small></div><button type="button" class="hint-button" data-action="hint">${mentorActionLabel(state.mentor, hintUsedForLesson)}</button></div><h2>${escapeHtml(item.rule)}</h2><div class="example-box"><span>Example</span><strong>${escapeHtml(item.example)}</strong></div><div class="mentor-line"><span class="mini-avatar">✦</span><span>${escapeHtml(characterMessage(item))}</span></div></article>
+      <form class="challenge-card" data-form="challenge"><div class="challenge-top"><span class="card-label">${tr('challenge')}</span><span class="challenge-type">${item.kind === 'choice' ? '01' : item.kind === 'fill' ? '02' : item.kind === 'order' ? '03' : '04'}</span></div><h2>${escapeHtml(challengeHeading(item))}</h2><p class="challenge-prompt">${escapeHtml(item.prompt)}</p><div class="mentor-mission ${state.mentor}">${escapeHtml(mentorMission(state.mentor))}</div>${renderChallengeInput(item)}${feedback ? renderFeedback(item) : `<button class="primary-button challenge-submit" type="submit">${tr('check')} <span>↗</span></button>`}</form>
     </div>
   </main>`
 }
@@ -211,8 +212,14 @@ function renderFeedback(item: Lesson): string {
   if (!feedback) return ''
   const title = feedback.correct ? tr('correct') : tr('incorrect')
   const detail = feedback.correct ? tr('perfect') : `${tr('yourAnswer')}: ${feedback.submitted || '—'}`
-  return `<div class="feedback ${feedback.correct ? 'success' : 'error'}"><div class="feedback-icon">${feedback.correct ? '✓' : '!'}</div><div><strong>${title}</strong><span>${escapeHtml(detail)}</span></div></div><div class="explanation"><span>${tr('explanation')}</span><p>${escapeHtml(item.explanation)}</p></div><div class="feedback-actions">${feedback.correct ? `<button class="primary-button" type="button" data-action="next-lesson">${tr('next')} <span>↗</span></button>` : `<button class="secondary-button" type="button" data-action="retry">${tr('retry')}</button>`}</div>`
+  const diagnosis = !feedback.correct && state.mentor === 'milo' ? `<div class="mentor-coach milo"><b>Milo’s diagnosis</b><p>${escapeHtml(mentorDiagnosis(item))}</p><span>Try again and watch that signal.</span></div>` : ''
+  const reward = feedback.correct && state.mentor === 'aya' ? `<div class="mentor-coach aya"><b>Aya’s quest chain</b><p>${feedback.bonus ? `Chain complete — +${feedback.bonus} bonus XP!` : `Chain: ${state.streak}/3 correct answers`}</p><span>Keep the streak alive.</span></div>` : ''
+  return `<div class="feedback ${feedback.correct ? 'success' : 'error'}"><div class="feedback-icon">${feedback.correct ? '✓' : '!'}</div><div><strong>${title}</strong><span>${escapeHtml(detail)}</span></div></div>${diagnosis}${reward}<div class="explanation"><span>${tr('explanation')}</span><p>${escapeHtml(item.explanation)}</p></div><div class="feedback-actions">${feedback.correct ? `<button class="primary-button" type="button" data-action="next-lesson">${tr('next')} <span>↗</span></button>` : `<button class="secondary-button" type="button" data-action="retry">${tr('retry')}</button>`}</div>`
 }
+
+function mentorActionLabel(mentor: SaveState['mentor'], used: boolean): string { return mentor === 'nova' ? (used ? '✓ Hint used' : '? Nova hint') : mentor === 'milo' ? '◈ Milo coach' : '✧ Aya chain' }
+function mentorMission(mentor: SaveState['mentor']): string { return mentor === 'nova' ? 'Nova: take one calm hint, then solve it yourself.' : mentor === 'milo' ? 'Milo: if you miss, I will name the exact grammar signal.' : 'Aya: reach a 3-answer chain to earn bonus XP.' }
+function mentorDiagnosis(item: Lesson): string { if (item.kind === 'choice') return 'Check the subject and the helper verb before choosing the option.'; if (item.kind === 'order') return 'Find the subject first, then place the verb before the object or result.'; if (item.kind === 'fill') return 'Look at the word immediately before the blank; it controls the form you need.'; return 'Compare the corrected sentence with the rule: the error is usually in the verb form or agreement.' }
 
 function mentorName(mentor: SaveState['mentor']): string { return mentor === 'milo' ? 'Milo' : mentor === 'aya' ? 'Aya' : 'Nova' }
 function mentorRole(mentor: SaveState['mentor']): string { return mentor === 'milo' ? 'Error Analyst' : mentor === 'aya' ? 'Quest Captain' : 'Grammar Guide' }
@@ -238,6 +245,7 @@ function bindEvents(): void {
   uiRoot.querySelectorAll<HTMLElement>('[data-mentor]').forEach(element => element.addEventListener('click', () => { const mentor = element.dataset.mentor as SaveState['mentor']; if (!mentor) return; state.mentor = mentor; save(); audio.unlock(); audio.play(true, false); render(); showToast(`${mentorName(mentor)} is leading your next quest.`, 'success') }))
   uiRoot.querySelectorAll<HTMLElement>('[data-lesson]').forEach(element => element.addEventListener('click', () => {
     currentLessonId = element.dataset.lesson ?? ''
+    hintUsedForLesson = false
     selectedAnswer = ''; orderSelection = []; feedback = null; mode = 'lesson'; audio.unlock(); render()
   }))
   uiRoot.querySelectorAll<HTMLElement>('[data-answer]').forEach(element => element.addEventListener('click', () => { selectedAnswer = element.dataset.answer ?? ''; audio.unlock(); render() }))
@@ -251,7 +259,7 @@ function handleAction(action: string): void {
   if (action === 'toggle-mute') { audio.unlock(); state.muted = !state.muted; save(); audio.setMuted(state.muted); render(); return }
   if (action === 'home') { mode = 'home'; feedback = null; render(); return }
   if (action === 'academy') { document.querySelector('.mentor-section')?.scrollIntoView({ behavior: 'smooth' }); return }
-  if (action === 'hint') { const item = currentLesson(); if (item && !feedback) { state.hints += 1; save(); showToast(`${mentorName(state.mentor)}: ${item.rule}`, 'success'); audio.playHint() } return }
+  if (action === 'hint') { const item = currentLesson(); if (item && !feedback) { if (state.mentor === 'nova' && hintUsedForLesson) { showToast('Nova has already used the one hint for this lesson.', 'error'); return } if (state.mentor === 'nova') { hintUsedForLesson = true; state.hints += 1; save(); showToast(`Nova: ${item.rule}`, 'success'); audio.playHint() } else if (state.mentor === 'milo') showToast('Milo will diagnose the pattern after an incorrect answer.', 'success'); else showToast(`Aya: reach ${Math.max(1, 3 - state.streak)} more correct answer${Math.max(1, 3 - state.streak) === 1 ? '' : 's'} for bonus XP.`, 'success') } return }
   if (action === 'start-next') {
     const next = lessons.find(item => !state.completed.includes(item.id)) ?? lessons[lessons.length - 1]
     state.selectedLevel = next.level; currentLessonId = next.id; mode = 'lesson'; feedback = null; selectedAnswer = ''; orderSelection = []; audio.unlock(); render(); return
@@ -270,11 +278,16 @@ function submitAnswer(form: HTMLFormElement): void {
   if (item.kind === 'order') answer = orderSelection.map(index => item.words?.[index] ?? '').join(' ')
   if (item.kind === 'fill' || item.kind === 'fix') answer = new FormData(form).get('answer')?.toString() ?? ''
   const correct = normalize(answer) === normalize(item.answer)
-  feedback = { correct, submitted: answer }
-  if (correct && !state.completed.includes(item.id)) {
-    state.completed.push(item.id); state.xp += item.kind === 'choice' ? 10 : 15; state.streak += 1; save()
-  }
-  audio.unlock(); audio.play(correct, correct && state.streak > 0 && state.streak % 5 === 0)
+  const wasNew = !state.completed.includes(item.id)
+  if (correct) {
+    state.streak += 1
+    if (wasNew) { state.completed.push(item.id); state.xp += item.kind === 'choice' ? 10 : 15 }
+  } else state.streak = 0
+  const bonus = correct && state.mentor === 'aya' && state.streak > 0 && state.streak % 3 === 0 ? 25 : 0
+  if (bonus) state.xp += bonus
+  feedback = { correct, submitted: answer, bonus }
+  save()
+  audio.unlock(); audio.play(correct, correct && state.streak > 0 && state.streak % 3 === 0)
   render()
 }
 
@@ -283,7 +296,7 @@ function goToNextLesson(): void {
   if (!item) return
   const levelLessons = lessonsByLevel(item.level)
   const next = levelLessons[levelLessons.findIndex(candidate => candidate.id === item.id) + 1]
-  if (next) { currentLessonId = next.id; selectedAnswer = ''; orderSelection = []; feedback = null; render(); return }
+  if (next) { currentLessonId = next.id; hintUsedForLesson = false; selectedAnswer = ''; orderSelection = []; feedback = null; render(); return }
   mode = 'home'; feedback = null; render(); showToast(tr('levelComplete'), 'success')
 }
 
