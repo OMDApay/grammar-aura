@@ -13,6 +13,8 @@ type SaveState = {
   streak: number
   muted: boolean
   selectedLevel: LevelId
+  mentor: 'nova' | 'milo' | 'aya'
+  hints: number
 }
 
 const SAVE_KEY = 'grammar-aura-progress-v1'
@@ -35,7 +37,7 @@ createScene(canvas)
 const audio = createAudio()
 
 function loadState(): SaveState {
-  const fallback: SaveState = { locale: 'en', completed: [], xp: 0, streak: 0, muted: false, selectedLevel: 'A1' }
+  const fallback: SaveState = { locale: 'en', completed: [], xp: 0, streak: 0, muted: false, selectedLevel: 'A1', mentor: 'nova', hints: 0 }
   try {
     const raw = localStorage.getItem(SAVE_KEY)
     if (!raw) return fallback
@@ -49,6 +51,8 @@ function loadState(): SaveState {
       streak: typeof parsed.streak === 'number' ? Math.max(0, parsed.streak) : 0,
       muted: Boolean(parsed.muted),
       selectedLevel: validLevel,
+      mentor: parsed.mentor === 'milo' || parsed.mentor === 'aya' ? parsed.mentor : 'nova',
+      hints: typeof parsed.hints === 'number' ? Math.max(0, parsed.hints) : 0,
     }
   } catch {
     return fallback
@@ -113,7 +117,7 @@ function renderHome(): string {
         <div class="eyebrow"><span class="pulse-dot"></span> CEFR A1 → C2 <span class="eyebrow-line"></span> 78 grammar quests</div>
         <h1 id="page-title">${tr('title')}<span class="title-dot">.</span></h1>
         <p class="hero-subtitle">${tr('subtitle')}</p>
-        <div class="hero-actions"><button class="primary-button" data-action="start-next">${tr('continue')} <span>↗</span></button><span class="hero-note">${tr('characterLine')}</span></div>
+        <div class="hero-actions"><button class="primary-button" data-action="start-next">${tr('continue')} <span>↗</span></button><button class="secondary-button" data-action="academy">${tr('meetMentors')}</button></div>
       </div>
       <div class="hero-characters" aria-label="${escapeHtml(tr('characterLine'))}">
         <div class="orbital orbital-one"></div><div class="orbital orbital-two"></div>
@@ -140,6 +144,7 @@ function renderHome(): string {
       <div class="section-heading"><div><p class="eyebrow">02 / ${escapeHtml(selected.name)}</p><h2 id="lesson-title">${tr('chooseLesson')}</h2></div><span class="level-progress" style="--level-color:${selected.color}">${percentageFor(selected.id)}%</span></div>
       <div class="lesson-grid">${selectedLessons.map((item, index) => renderLessonCard(item, index)).join('')}</div>
     </section>
+    <section class="mentor-section"><div class="section-heading"><div><p class="eyebrow">03 / The living academy</p><h2>${tr('meetMentors')}</h2></div><span class="section-count">${tr('mentorLine')}</span></div><div class="mentor-grid">${renderMentorCard('nova', 'Nova', 'The Guide', 'Explains the rule and gives one gentle hint.', '✦')}${renderMentorCard('milo', 'Milo', 'Error Analyst', 'Finds the exact pattern behind every mistake.', '◈')}${renderMentorCard('aya', 'Aya', 'Quest Captain', 'Turns perfect streaks into bonus XP and harder quests.', '✧')}</div></section>
     <footer class="app-footer"><span>Grammar Aura · original learning game</span><button class="text-button" data-action="reset">${tr('reset')}</button></footer>
   </main>`
 }
@@ -179,7 +184,7 @@ function renderLesson(): string {
     <div class="lesson-progress"><span style="width:${Math.max(8, doneCount / levelLessons.length * 100)}%;background:${level.color}"></span></div>
     <section class="lesson-header"><div class="level-pill" style="--level-color:${level.color}">${item.level}</div><div><p class="eyebrow">${escapeHtml(item.focus)}</p><h1>${escapeHtml(item.title)}</h1><p class="lesson-summary">${escapeHtml(item.summary)}</p></div></section>
     <div class="lesson-layout">
-      <article class="rule-card"><div class="card-label">${tr('guide')}</div><h2>${escapeHtml(item.rule)}</h2><div class="example-box"><span>Example</span><strong>${escapeHtml(item.example)}</strong></div><div class="mentor-line"><span class="mini-avatar">✦</span><span>${escapeHtml(characterMessage(item))}</span></div></article>
+      <article class="rule-card"><div class="card-label">${tr('guide')}</div><div class="mentor-banner ${state.mentor}"><span class="mentor-avatar">${mentorGlyph(state.mentor)}</span><div><b>${mentorName(state.mentor)}</b><small>${mentorRole(state.mentor)}</small></div><button type="button" class="hint-button" data-action="hint">? ${tr('hint')}</button></div><h2>${escapeHtml(item.rule)}</h2><div class="example-box"><span>Example</span><strong>${escapeHtml(item.example)}</strong></div><div class="mentor-line"><span class="mini-avatar">✦</span><span>${escapeHtml(characterMessage(item))}</span></div></article>
       <form class="challenge-card" data-form="challenge"><div class="challenge-top"><span class="card-label">${tr('challenge')}</span><span class="challenge-type">${item.kind === 'choice' ? '01' : item.kind === 'fill' ? '02' : item.kind === 'order' ? '03' : '04'}</span></div><h2>${escapeHtml(challengeHeading(item))}</h2><p class="challenge-prompt">${escapeHtml(item.prompt)}</p>${renderChallengeInput(item)}${feedback ? renderFeedback(item) : `<button class="primary-button challenge-submit" type="submit">${tr('check')} <span>↗</span></button>`}</form>
     </div>
   </main>`
@@ -209,6 +214,11 @@ function renderFeedback(item: Lesson): string {
   return `<div class="feedback ${feedback.correct ? 'success' : 'error'}"><div class="feedback-icon">${feedback.correct ? '✓' : '!'}</div><div><strong>${title}</strong><span>${escapeHtml(detail)}</span></div></div><div class="explanation"><span>${tr('explanation')}</span><p>${escapeHtml(item.explanation)}</p></div><div class="feedback-actions">${feedback.correct ? `<button class="primary-button" type="button" data-action="next-lesson">${tr('next')} <span>↗</span></button>` : `<button class="secondary-button" type="button" data-action="retry">${tr('retry')}</button>`}</div>`
 }
 
+function mentorName(mentor: SaveState['mentor']): string { return mentor === 'milo' ? 'Milo' : mentor === 'aya' ? 'Aya' : 'Nova' }
+function mentorRole(mentor: SaveState['mentor']): string { return mentor === 'milo' ? 'Error Analyst' : mentor === 'aya' ? 'Quest Captain' : 'Grammar Guide' }
+function mentorGlyph(mentor: SaveState['mentor']): string { return mentor === 'milo' ? '◈' : mentor === 'aya' ? '✧' : '✦' }
+function renderMentorCard(id: SaveState['mentor'], name: string, role: string, bio: string, glyph: string): string { return `<button class="mentor-card ${state.mentor === id ? 'active' : ''}" data-mentor="${id}"><span class="mentor-art ${id}">${glyph}</span><span><b>${name}</b><small>${role}</small><em>${bio}</em></span></button>` }
+
 function characterMessage(item: Lesson): string {
   if (item.level === 'C2') return 'Aya says: precision is a choice, not a coincidence.'
   if (item.level === 'B2' || item.level === 'C1') return 'Milo says: look for the relationship between the ideas.'
@@ -225,6 +235,7 @@ function bindEvents(): void {
     if (!next || element.classList.contains('locked')) return
     state.selectedLevel = next; save(); render()
   }))
+  uiRoot.querySelectorAll<HTMLElement>('[data-mentor]').forEach(element => element.addEventListener('click', () => { state.mentor = element.dataset.mentor as SaveState['mentor']; save(); render() }))
   uiRoot.querySelectorAll<HTMLElement>('[data-lesson]').forEach(element => element.addEventListener('click', () => {
     currentLessonId = element.dataset.lesson ?? ''
     selectedAnswer = ''; orderSelection = []; feedback = null; mode = 'lesson'; audio.unlock(); render()
@@ -239,6 +250,8 @@ function bindEvents(): void {
 function handleAction(action: string): void {
   if (action === 'toggle-mute') { state.muted = !state.muted; save(); audio.setMuted(state.muted); render(); return }
   if (action === 'home') { mode = 'home'; feedback = null; render(); return }
+  if (action === 'academy') { document.querySelector('.mentor-section')?.scrollIntoView({ behavior: 'smooth' }); return }
+  if (action === 'hint') { const item = currentLesson(); if (item && !feedback) { state.hints += 1; save(); showToast(`${mentorName(state.mentor)}: ${item.rule}`, 'success'); audio.playHint() } return }
   if (action === 'start-next') {
     const next = lessons.find(item => !state.completed.includes(item.id)) ?? lessons[lessons.length - 1]
     state.selectedLevel = next.level; currentLessonId = next.id; mode = 'lesson'; feedback = null; selectedAnswer = ''; orderSelection = []; audio.unlock(); render(); return
@@ -246,7 +259,7 @@ function handleAction(action: string): void {
   if (action === 'retry') { feedback = null; selectedAnswer = ''; orderSelection = []; render(); return }
   if (action === 'next-lesson') { goToNextLesson(); return }
   if (action === 'reset') {
-    if (window.confirm(tr('resetConfirm'))) { state = { locale: state.locale, completed: [], xp: 0, streak: 0, muted: state.muted, selectedLevel: 'A1' }; save(); render(); showToast(tr('noData'), 'success') }
+    if (window.confirm(tr('resetConfirm'))) { state = { locale: state.locale, completed: [], xp: 0, streak: 0, muted: state.muted, selectedLevel: 'A1', mentor: 'nova', hints: 0 }; save(); render(); showToast(tr('noData'), 'success') }
   }
 }
 
@@ -342,16 +355,14 @@ function makeCharacter(color: number, x: number, y: number, scale: number): THRE
   return group
 }
 
-function createAudio(): { unlock: () => void; play: (correct: boolean, perfect: boolean) => void; setMuted: (muted: boolean) => void } {
+function createAudio(): { unlock: () => void; play: (correct: boolean, perfect: boolean) => void; playHint: () => void; setMuted: (muted: boolean) => void } {
   let context: AudioContext | undefined
   let master: GainNode | undefined
-  let music: OscillatorNode | undefined
-  let musicGain: GainNode | undefined
+  let music: HTMLAudioElement | undefined
   const unlock = (): void => {
     if (context) { if (context.state === 'suspended') void context.resume(); return }
     context = new AudioContext(); master = context.createGain(); master.gain.value = state.muted ? 0 : 0.14; master.connect(context.destination)
-    music = context.createOscillator(); music.type = 'sine'; music.frequency.value = 110
-    musicGain = context.createGain(); musicGain.gain.value = 0.018; music.connect(musicGain); musicGain.connect(master); music.start()
+    music = new Audio('/audio/aura-academy.mp3'); music.loop = true; music.volume = 0.22; void music.play().catch(() => undefined)
   }
   const play = (correct: boolean, perfect: boolean): void => {
     if (state.muted) return
@@ -361,8 +372,9 @@ function createAudio(): { unlock: () => void; play: (correct: boolean, perfect: 
     gain.gain.setValueAtTime(0.0001, context.currentTime); gain.gain.exponentialRampToValueAtTime(correct ? 0.18 : 0.08, context.currentTime + 0.02); gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.28)
     oscillator.connect(gain); gain.connect(master); oscillator.start(); oscillator.stop(context.currentTime + 0.3)
   }
-  const setMuted = (muted: boolean): void => { if (master) master.gain.value = muted ? 0 : 0.14 }
-  return { unlock, play, setMuted }
+  const playHint = (): void => { if (state.muted || !context || !master) return; const now = context.currentTime; [392, 523, 659].forEach((frequency, index) => { const oscillator = context!.createOscillator(); const gain = context!.createGain(); oscillator.type = 'sine'; oscillator.frequency.value = frequency; gain.gain.setValueAtTime(0.0001, now + index * 0.07); gain.gain.exponentialRampToValueAtTime(0.06, now + index * 0.07 + 0.02); gain.gain.exponentialRampToValueAtTime(0.0001, now + index * 0.07 + 0.25); oscillator.connect(gain); gain.connect(master!); oscillator.start(now + index * 0.07); oscillator.stop(now + index * 0.07 + 0.28) }) }
+  const setMuted = (muted: boolean): void => { if (master) master.gain.value = muted ? 0 : 0.14; if (music) music.volume = muted ? 0 : 0.22 }
+  return { unlock, play, playHint, setMuted }
 }
 
 render()

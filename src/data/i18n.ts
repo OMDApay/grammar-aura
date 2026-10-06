@@ -49,6 +49,9 @@ type Copy = {
   characterMilo: string
   characterAya: string
   characterLine: string
+  meetMentors: string
+  mentorLine: string
+  hint: string
 }
 
 export const languageOptions: { id: Locale; label: string; native: string }[] = [
@@ -68,7 +71,7 @@ export const languageOptions: { id: Locale; label: string; native: string }[] = 
 ]
 
 const base: Copy = {
-  languageName: 'English', tagline: 'Grammar, but make it an adventure.', title: 'Grammar Aura', subtitle: 'A living map from first sentence to fluent precision.', choosePath: 'Choose your path', progress: 'Progress', lessons: 'lessons', xp: 'XP', streak: 'streak', continue: 'Continue', start: 'Start lesson', back: 'Back to path', home: 'Home', chooseLesson: 'Choose a lesson', lesson: 'Lesson', challenge: 'Challenge', check: 'Check answer', next: 'Next lesson', retry: 'Try again', correct: 'Correct!', incorrect: 'Not yet', perfect: 'Perfect round!', explanation: 'Why it works', yourAnswer: 'Your answer', selectAnswer: 'Select an answer', arrange: 'Arrange the words', completeSentence: 'Complete the sentence', correctSentence: 'Rewrite the sentence correctly', completed: 'Completed', locked: 'Locked', unlocked: 'Ready', noData: 'Your journey starts here.', soundOn: 'Sound on', soundOff: 'Sound off', localSave: 'Saved on this device', localSaveDetail: 'No account. No tracking. Your progress stays in this browser.', guide: 'Study the rule, then enter the challenge.', levelComplete: 'Level complete!', levelCompleteDetail: 'You have cleared every lesson in this level.', chooseLevel: 'Choose a CEFR level', reset: 'Reset progress', resetConfirm: 'Reset all local progress?', yesReset: 'Reset', cancel: 'Cancel', characterNova: 'Nova', characterMilo: 'Milo', characterAya: 'Aya', characterLine: 'Every sentence is a door. Let’s open one.',
+  languageName: 'English', tagline: 'Grammar, but make it an adventure.', title: 'Grammar Aura', subtitle: 'A living map from first sentence to fluent precision.', choosePath: 'Choose your path', progress: 'Progress', lessons: 'lessons', xp: 'XP', streak: 'streak', continue: 'Continue', start: 'Start lesson', back: 'Back to path', home: 'Home', chooseLesson: 'Choose a lesson', lesson: 'Lesson', challenge: 'Challenge', check: 'Check answer', next: 'Next lesson', retry: 'Try again', correct: 'Correct!', incorrect: 'Not yet', perfect: 'Perfect round!', explanation: 'Why it works', yourAnswer: 'Your answer', selectAnswer: 'Select an answer', arrange: 'Arrange the words', completeSentence: 'Complete the sentence', correctSentence: 'Rewrite the sentence correctly', completed: 'Completed', locked: 'Locked', unlocked: 'Ready', noData: 'Your journey starts here.', soundOn: 'Sound on', soundOff: 'Sound off', localSave: 'Saved on this device', localSaveDetail: 'No account. No tracking. Your progress stays in this browser.', guide: 'Study the rule, then enter the challenge.', levelComplete: 'Level complete!', levelCompleteDetail: 'You have cleared every lesson in this level.', chooseLevel: 'Choose a CEFR level', reset: 'Reset progress', resetConfirm: 'Reset all local progress?', yesReset: 'Reset', cancel: 'Cancel', characterNova: 'Nova', characterMilo: 'Milo', characterAya: 'Aya', characterLine: 'Every sentence is a door. Let’s open one.', meetMentors: 'Meet your mentors', mentorLine: 'Choose who leads your next quest.', hint: 'Hint',
 }
 
 const overrides: Record<Locale, Partial<Copy>> = {
