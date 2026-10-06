@@ -121,9 +121,9 @@ function renderHome(): string {
       </div>
       <div class="hero-characters" aria-label="${escapeHtml(tr('characterLine'))}">
         <div class="orbital orbital-one"></div><div class="orbital orbital-two"></div>
-        <div class="character character-nova"><span class="character-name">Nova</span></div>
-        <div class="character character-milo"><span class="character-name">Milo</span></div>
-        <div class="character character-aya"><span class="character-name">Aya</span></div>
+        <button type="button" class="character character-nova ${state.mentor === 'nova' ? 'selected' : ''}" data-mentor="nova" aria-label="Choose Nova"><span class="character-name">Nova</span></button>
+        <button type="button" class="character character-milo ${state.mentor === 'milo' ? 'selected' : ''}" data-mentor="milo" aria-label="Choose Milo"><span class="character-name">Milo</span></button>
+        <button type="button" class="character character-aya ${state.mentor === 'aya' ? 'selected' : ''}" data-mentor="aya" aria-label="Choose Aya"><span class="character-name">Aya</span></button>
         <div class="hero-spark spark-a">+</div><div class="hero-spark spark-b">✦</div><div class="hero-spark spark-c">•</div>
       </div>
     </section>
@@ -235,7 +235,7 @@ function bindEvents(): void {
     if (!next || element.classList.contains('locked')) return
     state.selectedLevel = next; save(); render()
   }))
-  uiRoot.querySelectorAll<HTMLElement>('[data-mentor]').forEach(element => element.addEventListener('click', () => { state.mentor = element.dataset.mentor as SaveState['mentor']; save(); render() }))
+  uiRoot.querySelectorAll<HTMLElement>('[data-mentor]').forEach(element => element.addEventListener('click', () => { const mentor = element.dataset.mentor as SaveState['mentor']; if (!mentor) return; state.mentor = mentor; save(); audio.unlock(); audio.play(true, false); render(); showToast(`${mentorName(mentor)} is leading your next quest.`, 'success') }))
   uiRoot.querySelectorAll<HTMLElement>('[data-lesson]').forEach(element => element.addEventListener('click', () => {
     currentLessonId = element.dataset.lesson ?? ''
     selectedAnswer = ''; orderSelection = []; feedback = null; mode = 'lesson'; audio.unlock(); render()
