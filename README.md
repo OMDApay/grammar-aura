@@ -12,7 +12,7 @@
   - **Aya — Quest Captain:** encourages streaks and higher-skill quests.
 - Original background music with mute controls and responsive feedback sounds.
 - Interface localization for English, Spanish, Turkish, French, German, Russian, Hausa, Swahili, Kinyarwanda, Japanese, Korean, Chinese, and Italian.
-- Progress saved locally in the browser with `localStorage`; no account, backend, database, tracking, or API keys.
+- Progress saved locally in the browser with `localStorage`; no account, backend, database, or API keys. Google Analytics is enabled with measurement ID `G-RW8R377ZT5` for anonymous product-usage measurement.
 - Three.js visual layer with responsive HTML/CSS gameplay UI.
 
 ## Run locally
@@ -36,7 +36,7 @@ The repository includes a GitHub Actions workflow that builds the Vite applicati
 
 ## Privacy
 
-Grammar Aura does not require sign-in and does not send learning progress to a server. Progress and settings remain in the current browser only.
+Grammar Aura does not require sign-in and does not send learning progress to a server. Progress and settings remain in the current browser only. The published site loads Google Analytics (`G-RW8R377ZT5`) to measure anonymous visits and product usage; it does not use Analytics to store the player's lesson progress.
 
 ## Credits
 
